@@ -35,12 +35,61 @@ foreach (keys %drop_files) {
   }
 }
 
+opendir(DIR,'/root/iptables.d');
+my %table_files  = map { $_ => 1 } grep { /^table_/ } readdir DIR;
+closedir(DIR);
+my %table;
+foreach (keys %table_files) {
+  /^table_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)_(\d+)_(...)_(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})_(\d+)_(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})_(\d+)/;
+  my ($table, $chain, $rule, $port, $protocol, $source, $sourcemask, $destination, $destinationmask) = ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+  unless ($table and $chain and $rule and $protocol and $port and $source and ($sourcemask >= 0) and $destination  and ($destinationmask >= 0)) {
+    warn "Bad filename: '$_'\n";
+  }
+  else {
+
+    #print "inc: $table $chain $rule $port $protocol $source $sourcemask $destination $destinationmask \n";
+
+    $tables{$table}{$chain}{$rule}{$port}{$protocol}{$source}{$sourcemask}{$destination}{$destinationmask}++;
+  }
+}
+
+
 my $tmpfile = "/root/iptables.d/iptables.new.$$";
 open(OUTPUT, ">$tmpfile") or die "$!\n";
 # header
 print OUTPUT <<'EOT';
 # Firewall configuration managed by puppet
 # Manual customizations will be overwritten
+# Other tables then filter
+EOT
+
+foreach my $table (sort keys %tables) {
+  print OUTPUT "*${table}\n";
+
+  foreach my $chain (sort keys %{$tables{$table}}){
+    print OUTPUT ":${chain} ACCEPT [0:0]\n";
+      foreach my $rule (sort keys %{$tables{$table}{$chain}}) {
+        foreach my $port (sort keys %{$tables{$table}{$chain}{$rule}}) {
+          foreach my $protocol (sort keys %{$tables{$table}{$chain}{$rule}{$port}}) {
+            foreach my $source (sort keys %{$tables{$table}{$chain}{$rule}{$port}{$protocol}}) {
+              foreach my $sourcemask (sort keys %{$tables{$table}{$chain}{$rule}{$port}{$protocol}{$source}}) {
+                foreach my $destination (sort keys %{$tables{$table}{$chain}{$rule}{$port}{$protocol}{$source}{$sourcemask}}) {
+                  foreach my $destinationmask (sort keys %{$tables{$table}{$chain}{$rule}{$port}{$protocol}{$source}{$sourcemask}{$destination}}) {
+                      print OUTPUT "-A INPUT -m state --state NEW -m ${protocol} -p ${protocol} -s ${source}/${sourcemask} -d ${destination}/${destinationmask} --dport ${port} -j ${rule}\n";
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+  }
+  print OUTPUT "COMMIT\n";
+
+}
+
+print OUTPUT <<'EOT';
+# DEFAULT Table
 *filter
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
