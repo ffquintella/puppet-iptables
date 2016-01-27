@@ -1,6 +1,6 @@
-# _Unmaintained_
+# History
 
-I no longer use Puppet actively and this software has not been maintained for some time.
+This module originated on the forked module and is mantained by me since the original maintainer is not working on it anymore.
 
 # puppet-iptables
 

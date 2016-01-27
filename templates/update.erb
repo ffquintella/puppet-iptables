@@ -1,8 +1,7 @@
-<% $truthy = [true, "yes", "true"] -%>
-<% $allow_icmp      = $truthy.include? scope.lookupvar('::iptables::allow_icmp') -%>
-<% $allow_localhost = $truthy.include? scope.lookupvar('::iptables::allow_localhost') -%>
-<% $log_failures    = $truthy.include? scope.lookupvar('::iptables::log_failures') -%>
-<% $selinux         = $truthy.include? scope.lookupvar('::selinux') -%>
+<% $allow_icmp      = scope.lookupvar('::iptables::allow_icmp') -%>
+<% $allow_localhost = scope.lookupvar('::iptables::allow_localhost') -%>
+<% $log_failures    = scope.lookupvar('::iptables::log_failures') -%>
+<% $selinux         = scope.lookupvar('::selinux') -%>
 #!/usr/bin/perl
 
 opendir(DIR,'/root/iptables.d');
@@ -10,13 +9,13 @@ my %allow_files = map { $_ => 1 } grep { /^allow_/ } readdir DIR;
 closedir(DIR);
 my %allow;
 foreach (keys %allow_files) {
-  /^allow_(\d+)_(...)/;
-  my ($port, $protocol) = ($1, $2);
-  unless ($protocol and $port) {
+  /^allow_(\d+)_(...)_(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})_(\d+)_(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})_(\d+)/;
+  my ($port, $protocol, $source, $sourcemask, $destination, $destinationmask) = ($1, $2, $3, $4, $5, $6);
+  unless ($protocol and $port and $source  and ($sourcemask >= 0) and $destination  and ($destinationmask >= 0) ) {
     warn "Bad filename: '$_'\n";
   }
   else {
-    $allow{$port}{$protocol}++;
+    $allow{$port}{$protocol}{$source}{$sourcemask}{$destination}{$destinationmask}++;
   }
 }
 
@@ -25,14 +24,14 @@ my %drop_files  = map { $_ => 1 } grep { /^drop_/ } readdir DIR;
 closedir(DIR);
 my %drop;
 foreach (keys %drop_files) {
-  /^drop_(\d+)_(...)/;
-  my ($port, $protocol) = ($1, $2);
-  unless ($protocol and $port) {
+  /^drop_(\d+)_(...)_(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})_(\d+)_(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})_(\d+)/;
+  my ($port, $protocol, $source, $sourcemask, $destination, $destinationmask) = ($1, $2, $3, $4, $5, $6);
+  unless ($protocol and $port and $source and ($sourcemask >= 0) and $destination  and ($destinationmask >= 0) ) {
     warn "Bad filename: '$_'\n";
   }
   else {
     # Allow wins over drop as we drop lots by default
-    $drop{$port}{$protocol}++ unless exists $allow{$port}{$protocol};
+    $drop{$port}{$protocol}{$source}{$sourcemask}{$destination}{$destinationmask}++ unless exists $allow{$port}{$protocol}{$source}{$sourcemask}{$destination}{$destinationmask};
   }
 }
 
@@ -47,28 +46,44 @@ print OUTPUT <<'EOT';
 :FORWARD ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-<% if $allow_icmp -%>
+<% if $allow_icmp == 'yes' -%>
 -A INPUT -p icmp -j ACCEPT
 <% end -%>
-<% if $allow_localhost  -%>
+<% if $allow_localhost == 'yes' -%>
 -A INPUT -i lo -j ACCEPT
 <% end -%>
 EOT
 # allow rules
 foreach my $port (sort keys %allow) {
   foreach my $protocol (sort keys %{ $allow{$port} }) {
-    print OUTPUT "-A INPUT -m state --state NEW -m ${protocol} -p ${protocol} --dport ${port} -j ACCEPT\n";
+    foreach my $source (sort keys %{ $allow{$port}{$protocol} }) {
+      foreach my $sourcemask (sort keys %{ $allow{$port}{$protocol}{$source} }) {
+        foreach my $destination (sort keys %{ $allow{$port}{$protocol}{$source}{$sourcemask} }) {
+          foreach my $destinationmask (sort keys %{ $allow{$port}{$protocol}{$source}{$sourcemask}{$destination} }) {
+            print OUTPUT "-A INPUT -m state --state NEW -m ${protocol} -p ${protocol} -s ${source}/${sourcemask} -d ${destination}/${destinationmask} --dport ${port} -j ACCEPT\n";
+          }
+        }
+      }
+    }
   }
 }
 # drop rules
 foreach my $port (sort keys %drop) {
   foreach my $protocol (sort keys %{ $drop{$port} }) {
-    print OUTPUT "-A INPUT -p ${protocol} --dport ${port} -j DROP\n";
+    foreach my $source (sort keys %{ $drop{$port}{$protocol} }) {
+      foreach my $sourcemask (sort keys %{ $drop{$port}{$protocol}{$source} }) {
+        foreach my $destination (sort keys %{ $drop{$port}{$protocol}{$source}{$sourcemask} }) {
+          foreach my $destinationmask (sort keys %{ $drop{$port}{$protocol}{$source}{$sourcemask}{$destination} }) {
+            print OUTPUT "-A INPUT -m state --state NEW -m ${protocol} -p ${protocol} -s ${source}/${sourcemask} -d ${destination}/${destinationmask} --dport ${port} -j DROP\n";
+          }
+        }
+      }
+    }
   }
 }
 # footer
 print OUTPUT <<'EOT';
-<% if $log_failures -%>
+<% if $log_failures == 'yes' -%>
 -A INPUT -j LOG --log-prefix "DROP INPUT: "
 <% end -%>
 -A INPUT -j REJECT --reject-with icmp-host-prohibited
@@ -77,6 +92,6 @@ COMMIT
 EOT
 close(OUTPUT);
 system("mv $tmpfile /etc/sysconfig/iptables");
-<% if $selinux -%>
+<% if $selinux == 'true' -%>
 system("/sbin/restorecon /etc/sysconfig/iptables");
 <% end -%>
