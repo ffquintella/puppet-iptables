@@ -22,7 +22,16 @@ class iptables (
 
     if $tables != undef {
 
-      create_resources('iptables::table', hash($tables))
+      $htb = hash($tables)
+      notify {"Tables input ${htb} ":
+          withpath => true,
+        }
+      notify {"HTables input ${htb} ":
+          withpath => true,
+        }
+      $tables.each |$tb|{
+        create_resources('iptables::table', hash($tables))
+      }
     }
 
   }
