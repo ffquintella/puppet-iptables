@@ -22,7 +22,7 @@ class iptables (
 
     if $tables != undef {
 
-      create_resources('iptables::table', hash($table))
+      create_resources('iptables::table', hash($tables))
     }
 
   }
