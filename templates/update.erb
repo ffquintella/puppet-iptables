@@ -67,7 +67,11 @@ foreach my $table (sort keys %tables) {
   print OUTPUT "*${table}\n";
 
   foreach my $chain (sort keys %{$tables{$table}}){
-    print OUTPUT ":${chain} ACCEPT [0:0]\n";
+    if ($chain eq "INPUT" or $chain eq "OUTPUT" or $chain eq "PREROUTING" or $chain eq "POSTROUTING"){
+       print OUTPUT ":${chain} ACCEPT [0:0]\n";
+     } else {
+       print OUTPUT ":${chain} [0:0]\n";
+     }
       foreach my $rule (sort keys %{$tables{$table}{$chain}}) {
         foreach my $port (sort keys %{$tables{$table}{$chain}{$rule}}) {
           foreach my $protocol (sort keys %{$tables{$table}{$chain}{$rule}{$port}}) {
