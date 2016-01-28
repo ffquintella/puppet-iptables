@@ -16,5 +16,9 @@ class iptables (
 
     $tables = hiera_hash('iptables::tables', undef)
 
+    if $tables != undef {
+      create_resources('iptables::table', $tables)
+    }
+
   }
 }
