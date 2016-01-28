@@ -28,7 +28,7 @@ class iptables (
           withpath => true,
         }
 
-        create_resources('iptables::table', $table)
+        #create_resources('iptables::table', $table)
       }
     }
 
