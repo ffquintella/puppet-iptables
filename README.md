@@ -29,7 +29,8 @@ Example hiera config:
 This new structure is what should be developed from now on. The old one is still kept for compatibility issues
 
 iptables::tables:
-  nat:
+  -
+    table: nat
     chain: PREROUTING
     rules:
       -
@@ -40,6 +41,8 @@ iptables::tables:
         port: 90
         protocol: tcp
         rule: ACCEPT
+  -
+    table: nat
     chain: DOCKER
     rules:
       -
