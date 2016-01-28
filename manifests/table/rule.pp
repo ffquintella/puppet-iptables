@@ -2,7 +2,7 @@ define iptables::table::rule (
   $table = undef,
   $chain = undef,
   $rule = 'ACCEPT',
-  $port = '0',
+  $port = '00',
   $protocol = 'tcp',
   $source = '0.0.0.0',
   $sourcemask = '0',

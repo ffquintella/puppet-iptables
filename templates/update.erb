@@ -62,6 +62,7 @@ print OUTPUT <<'EOT';
 # Manual customizations will be overwritten
 # Other tables then filter
 EOT
+$filter = 0;
 
 foreach my $table (sort keys %tables) {
   print OUTPUT "*${table}\n";
@@ -75,6 +76,7 @@ print OUTPUT <<'EOT';
 EOT
 }
 if ($table eq "filter"){
+  $filter = 1;
 print OUTPUT <<'EOT';
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
@@ -97,7 +99,7 @@ EOT
               foreach my $sourcemask (sort keys %{$tables{$table}{$chain}{$rule}{$port}{$protocol}{$source}}) {
                 foreach my $destination (sort keys %{$tables{$table}{$chain}{$rule}{$port}{$protocol}{$source}{$sourcemask}}) {
                   foreach my $destinationmask (sort keys %{$tables{$table}{$chain}{$rule}{$port}{$protocol}{$source}{$sourcemask}{$destination}}) {
-                    if($port eq '0'){
+                    if($port eq '00'){
                       print OUTPUT "-A ${chain} -m state --state NEW  -p ${protocol} -s ${source}/${sourcemask} -d ${destination}/${destinationmask}  -j ${rule}\n";
                     }else{
                       print OUTPUT "-A ${chain} -m state --state NEW  -p ${protocol} -s ${source}/${sourcemask} -d ${destination}/${destinationmask} --dport ${port} -j ${rule}\n";
@@ -113,7 +115,7 @@ EOT
   print OUTPUT "COMMIT\n";
 
 }
-
+if(!$filter){
 print OUTPUT <<'EOT';
 # DEFAULT Table
 *filter
@@ -165,6 +167,7 @@ print OUTPUT <<'EOT';
 -A FORWARD -j REJECT --reject-with icmp-host-prohibited
 COMMIT
 EOT
+}
 close(OUTPUT);
 system("mv $tmpfile /etc/sysconfig/iptables");
 <% if $selinux == 'true' -%>
