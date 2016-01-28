@@ -76,7 +76,7 @@ EOT
   foreach my $chain (sort keys %{$tables{$table}}){
     if ($chain eq "INPUT" or $chain eq "OUTPUT" or $chain eq "PREROUTING" or $chain eq "POSTROUTING"){
     } else {
-      print OUTPUT ":${chain} [0:0]\n";
+      print OUTPUT ":${chain} - [0:0]\n";
     }
   }
 
