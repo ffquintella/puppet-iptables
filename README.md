@@ -25,6 +25,29 @@ Example hiera config:
         tcp: 'drop'
         udp: 'drop'
 
+** New structure **
+This new structure is what should be developed from now on. The old one is still kept for compatibility issues
+
+iptables::tables:
+  nat:
+    chain: PREROUTING
+    rules:
+      -
+        port: 80
+        protocol: tcp
+        rule: ACCEPT
+      -
+        port: 90
+        protocol: tcp
+        rule: ACCEPT
+    chain: DOCKER
+    rules:
+      -
+        port: 80
+        protocol: tcp
+        rule: ACCEPT
+
+
 This example configures iptables to allow incoming TCP connections to ports 22
 (ssh) and 80 (http), and silently drop all connections to port 23 (telnet).
 All ICMP and localhost connections will be allowed and failed connections to
