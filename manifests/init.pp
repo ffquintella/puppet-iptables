@@ -13,5 +13,8 @@ class iptables (
   }
   else {
     create_resources( 'iptables::rule', hiera_hash('iptables::ports', $ports) )
+
+    $tables = hiera_hash('iptables::tables', undef)
+
   }
 }
