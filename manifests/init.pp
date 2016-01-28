@@ -14,24 +14,15 @@ class iptables (
   else {
     create_resources( 'iptables::rule', hiera_hash('iptables::ports', $ports) )
 
-    $tables = hiera_array('iptables::tables', undef)
+    $tables = hiera_hash('iptables::tables', undef)
 
   /*  notify {"Tables input ${tables} ":
       withpath => true,
     }*/
 
     if $tables != undef {
+        create_resources('iptables::table', $tables)
 
-      $htb = hash($tables)
-      notify {"Tables input ${htb} ":
-          withpath => true,
-        }
-      notify {"HTables input ${htb} ":
-          withpath => true,
-        }
-      $tables.each |$tb|{
-        create_resources('iptables::table', $tb)
-      }
     }
 
   }
