@@ -27,8 +27,13 @@ class iptables (
         notify {"Table input ${table} ":
           withpath => true,
         }
+        $tbs = {$table}
 
-        #create_resources('iptables::table', $table)
+        notify {"Tbs input ${tbs} ":
+          withpath => true,
+        }
+
+        create_resources('iptables::table', $tbs)
       }
     }
 
