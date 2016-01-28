@@ -14,7 +14,11 @@ class iptables (
   else {
     create_resources( 'iptables::rule', hiera_hash('iptables::ports', $ports) )
 
-    $tables = hiera_hash('iptables::tables', undef)
+    $new_syntax_only = hiera('iptables::new_syntax_only', false)
+
+    if (!$newsyntax){
+      $tables = hiera_hash('iptables::tables', undef)
+    }
 
   /*  notify {"Tables input ${tables} ":
       withpath => true,

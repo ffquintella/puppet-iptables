@@ -66,12 +66,21 @@ EOT
 foreach my $table (sort keys %tables) {
   print OUTPUT "*${table}\n";
 
+if ($table eq "nat"){
 print OUTPUT <<'EOT';
 :INPUT ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 :PREROUTING ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
 EOT
+}
+if ($table eq "filter"){
+print OUTPUT <<'EOT';
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+EOT
+}
 
   foreach my $chain (sort keys %{$tables{$table}}){
     if ($chain eq "INPUT" or $chain eq "OUTPUT" or $chain eq "PREROUTING" or $chain eq "POSTROUTING"){
@@ -88,7 +97,11 @@ EOT
               foreach my $sourcemask (sort keys %{$tables{$table}{$chain}{$rule}{$port}{$protocol}{$source}}) {
                 foreach my $destination (sort keys %{$tables{$table}{$chain}{$rule}{$port}{$protocol}{$source}{$sourcemask}}) {
                   foreach my $destinationmask (sort keys %{$tables{$table}{$chain}{$rule}{$port}{$protocol}{$source}{$sourcemask}{$destination}}) {
-                      print OUTPUT "-A ${chain} -m state --state NEW -m ${protocol} -p ${protocol} -s ${source}/${sourcemask} -d ${destination}/${destinationmask} --dport ${port} -j ${rule}\n";
+                    if($port eq '0'){
+                      print OUTPUT "-A ${chain} -m state --state NEW  -p ${protocol} -s ${source}/${sourcemask} -d ${destination}/${destinationmask}  -j ${rule}\n";
+                    }else{
+                      print OUTPUT "-A ${chain} -m state --state NEW  -p ${protocol} -s ${source}/${sourcemask} -d ${destination}/${destinationmask} --dport ${port} -j ${rule}\n";
+                    }
                   }
                 }
               }
