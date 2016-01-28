@@ -16,7 +16,7 @@ class iptables (
 
     $new_syntax_only = hiera('iptables::new_syntax_only', false)
 
-    if (!$newsyntax){
+    if (!$new_syntax_only){
       $tables = hiera_hash('iptables::tables', undef)
     }
 
