@@ -7,7 +7,7 @@ define iptables::table (
 
   validate_string($table)
   validate_string($chain)
-  validate_hash($rules)
+  validate_array($rules)
 
 
   if $rules != undef {
@@ -32,7 +32,7 @@ define iptables::table (
         source => $value[source],
         sourcemask => $value[sourcemask],
         destination => $value[destination],
-        destinationmask => $value[destinationmask],   
+        destinationmask => $value[destinationmask],
       }
     }
   }
