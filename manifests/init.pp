@@ -30,7 +30,7 @@ class iptables (
           withpath => true,
         }
       $tables.each |$tb|{
-        create_resources('iptables::table', hash($tables))
+        create_resources('iptables::table', hash($tb))
       }
     }
 
