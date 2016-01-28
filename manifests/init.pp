@@ -12,17 +12,16 @@ class iptables (
     include iptables::default
   }
   else {
-    create_resources( 'iptables::rule', hiera_hash('iptables::ports', $ports) )
+
 
     $new_syntax_only = hiera('iptables::new_syntax_only', false)
 
     if (!$new_syntax_only){
-      $tables = hiera_hash('iptables::tables', undef)
-    }
+      create_resources( 'iptables::rule', hiera_hash('iptables::ports', $ports) )
 
-  /*  notify {"Tables input ${tables} ":
-      withpath => true,
-    }*/
+    }
+    
+    $tables = hiera_hash('iptables::tables', undef)
 
     if $tables != undef {
         create_resources('iptables::table', $tables)
