@@ -16,25 +16,13 @@ class iptables (
 
     $tables = hiera_array('iptables::tables', undef)
 
-    notify {"Tables input ${tables} ":
+  /*  notify {"Tables input ${tables} ":
       withpath => true,
-    }
+    }*/
 
     if $tables != undef {
 
-      $tables.each | Integer $index, Hash $table |{
-
-        notify {"Table input ${table} ":
-          withpath => true,
-        }
-        $tbs = {$table}
-
-        notify {"Tbs input ${tbs} ":
-          withpath => true,
-        }
-
-        create_resources('iptables::table', $tbs)
-      }
+      create_resources('iptables::table', hash($table))
     }
 
   }
