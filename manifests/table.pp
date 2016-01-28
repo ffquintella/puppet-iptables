@@ -12,7 +12,7 @@ define iptables::table (
 
   if $rules != undef {
 
-    $rules.each | Integer $index, String $value |{
+    $rules.each | Integer $index, Struct $value |{
 
       $port = $value[port]
       $rule = $value[rule]
