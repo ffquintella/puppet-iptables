@@ -17,11 +17,22 @@ class iptables (
     $new_syntax_only = hiera('iptables::new_syntax_only', false)
 
     if (!$new_syntax_only){
-      create_resources( 'iptables::rule', hiera_hash('iptables::ports', $ports) )
+
+
+
+      create_resources( 'iptables::rule', lookup('iptables::ports', {
+        merge         => deep,
+        default_value => $ports,
+        }) )
+
+      #create_resources( 'iptables::rule', lookup('iptables::ports', $ports) )
 
     }
-    
-    $tables = hiera_hash('iptables::tables', undef)
+    $tables = lookup('iptables::tables', {
+      merge         => deep,
+      default_value => undef,
+      })
+    #$tables = hiera_hash('iptables::tables', undef)
 
     if $tables != undef {
         create_resources('iptables::table', $tables)
